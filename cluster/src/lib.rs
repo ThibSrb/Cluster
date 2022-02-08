@@ -75,7 +75,19 @@ impl Default for ClusterError {
     }
 }
 
-trait Node<K> {
+pub trait AdjUnicity<V> {
+    fn push_unique(&mut self, val: V);
+}
+
+impl<V> AdjUnicity<V> for Vec<V> where V: PartialEq {
+    fn push_unique(&mut self, val: V) {
+        if !self.contains(&val) {
+            self.push(val);
+        }
+    }
+}
+
+pub trait Node<K> {
     /// Get the adjacency of the current Node.
     /// # Return
     /// A immutable reference to the adjacency list of the current Node.
@@ -88,7 +100,7 @@ trait Node<K> {
 
 /// Graph data structure trait.
 /// Named Cluster to help diffenciate from the other implementation of graph data structure.
-trait Cluster<K, N: Node<K>>
+pub trait Cluster<K, N: Node<K>>
 where
     K: PartialEq,
     K: Clone,
@@ -169,7 +181,7 @@ where
     /// Nothing if everithing gone well, an error otherwise.
     /// 
     fn add_edge(&mut self, src: K, dst: K) -> Result<()> {
-        let adj = self.get_adj_mut(&src).ok_or(ClusterError::detailled_boxed(
+        let adj = self.get_adj_mut(&src).ok_or(ClusterError::detailled(
             "To add edge, both node must exists in the Cluster.",
         ))?;
         if !adj.contains(&dst) {
@@ -189,7 +201,7 @@ where
     fn remove_edge(&mut self, src: K, dst: K) -> Result<()> {
         let adj = self
             .get_adj_mut(&src)
-            .ok_or(ClusterError::detailled_boxed("<src> node does not exists."))?;
+            .ok_or(ClusterError::detailled("<src> node does not exists."))?;
         if let Some(index) = adj.iter().position(|i| *i == dst) {
             adj.remove(index);
         }
