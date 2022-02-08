@@ -222,7 +222,7 @@ where
         Ok(())
     }
 
-    /// Reùove the edges between src and dst in the Cluster in both directions.
+    /// Remove the edges between src and dst in the Cluster in both directions.
     /// # Parameters
     /// - src - The key of the source node
     /// - dst - The key of the destination node.
