@@ -97,7 +97,7 @@ pub trait Mappable<K, V> {
     /// # Parameters
     /// - key - The key where the value has to be stored in the Mappable.
     /// - value - The value to store in the Mappable.
-    fn add(&mut self, key: K, value: V);
+    fn map(&mut self, key: K, value: V);
 }
 
 pub trait Settable<V> {
@@ -165,7 +165,7 @@ where
     /// The index at which the node has been stored in the graph.
     fn add(&mut self, node: N) -> K {
         let key = self.new_key();
-        Mappable::add(self, key.clone(), node);
+        self.map(key.clone(), node);
         key
     }
 
