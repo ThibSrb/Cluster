@@ -97,11 +97,42 @@ pub trait Mappable<K, V> {
     /// # Parameters
     /// - key - The key where the value has to be stored in the Mappable.
     /// - value - The value to store in the Mappable.
-    fn map(&mut self, key: K, value: V);
+    fn add(&mut self, key: K, value: V);
+
+    /// Removes the designated value from the Mappable
+    /// # Parameter
+    /// - key - The key of the value to remove.
+    /// # Return
+    /// An Option containing the value if it exists, None otherwise
+    fn remove(&mut self, key: &K) -> Option<V>;
+
+    /// Check if the Mappable contains a value at a given key.
+    /// # Parameter
+    /// - key - The key on we want to check the Mappable contains it or no.
+    ///
+    /// # Return
+    /// True if the key is in the Mappable, false otherwise.
+    fn contains_key(&self, key: &K) -> bool;
 }
 
 pub trait Settable<V> {
+    /// Adds a value in the Settable.
+    /// # Parameter
+    /// - val - The value to add in the Settable.
     fn add(&mut self, val: V);
+
+    /// Removes a value in the Settable.
+    /// # Parameter
+    /// - val - The value to remove in the Settable.
+    fn remove(&mut self, val:& V);
+
+    /// Check if the Settable contains a given value.
+    /// # Parameter
+    /// - val - The value we want to check the Settable contains it or no.
+    ///
+    /// # Return
+    /// True if the key is in the Settable, false otherwise.
+    fn contains(&mut self, val: &V) -> bool;
 }
 
 impl<V> Settable<V> for Vec<V>
@@ -112,6 +143,16 @@ where
         if !self.contains(&val) {
             self.push(val);
         }
+    }
+
+    fn remove(&mut self, val: &V) {
+        if let Some(index) = self.iter().position(|i| *i == *val) {
+            self.remove(index);
+        }
+    }
+
+    fn contains(&mut self, val: &V) -> bool {
+        self.as_slice().contains(val)
     }
 }
 
@@ -152,29 +193,14 @@ where
     /// The key newly generated.
     fn new_key(&self) -> K;
 
-    /// Check if the Cluster contains a node at a given key.
-    /// # Parameter
-    /// - key - The key on we want to check the Cluster contains it or no.
-    ///
-    /// # Return
-    /// True if the key is in the Cluster, false otherwise.
-    fn contains_key(&self, key: &K) -> bool;
-
     /// Add a node in the Cluster.
     /// # Return
     /// The index at which the node has been stored in the graph.
     fn add(&mut self, node: N) -> K {
         let key = self.new_key();
-        self.map(key.clone(), node);
+        Mappable::add(self, key.clone(), node);
         key
     }
-
-    /// Removes the designated Node from the graph
-    /// # Parameter
-    /// - key - The key of the Node to remove.
-    /// # Return
-    /// An error if the node doesn't exist nothing otherwise.
-    fn remove(&mut self, key: K) -> Result<()>;
 
     /// Get the adjancy list of the node designed by it key given in parameter.
     /// # Parameter
@@ -213,11 +239,11 @@ where
     /// # Return
     /// Nothing if everithing gone well, an error otherwise.
     ///
-    fn remove_edge(&mut self, src: K, dst: K) -> Result<()> {
+    fn remove_edge(&mut self, src: &K, dst: &K) -> Result<()> {
         let adj = self
             .get_adj_mut(&src)
             .ok_or(ClusterError::detailled("<src> node does not exists."))?;
-        if let Some(index) = adj.iter().position(|i| *i == dst) {
+        if let Some(index) = adj.iter().position(|i| *i == *dst) {
             adj.remove(index);
         }
         Ok(())
@@ -245,8 +271,8 @@ where
     /// # Return
     /// Nothing if everithing gone well, an error otherwise.
     ///
-    fn remove_doubly_edge(&mut self, src: K, dst: K) -> Result<()> {
-        self.remove_edge(src.clone(), dst.clone())?;
+    fn remove_doubly_edge(&mut self, src: &K, dst: &K) -> Result<()> {
+        self.remove_edge(src, dst)?;
         self.remove_edge(dst, src)?;
         Ok(())
     }
