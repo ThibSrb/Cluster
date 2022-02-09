@@ -32,7 +32,7 @@ impl ClusterError {
 
     /// Create a new boxed Cluster error with the specified details in it.
     /// # Parameter
-    /// - detail - The detail of the error. 
+    /// - detail - The detail of the error.
     /// # Return
     /// The newly created Boxed ClusterError.
     pub fn detailled_boxed(detail: &str) -> Box<ClusterError> {
@@ -52,7 +52,7 @@ impl ClusterError {
 
     /// Create a ClusterError with the specified details in it.
     /// # Parameter
-    /// - detail - The detail of the error. 
+    /// - detail - The detail of the error.
     /// # Return
     /// The newly created ClusterError.
     pub fn detailled(message: &str) -> ClusterError {
@@ -75,18 +75,47 @@ impl Default for ClusterError {
     }
 }
 
-pub trait AdjUnicity<V> {
-    fn push_unique(&mut self, val: V);
+
+pub trait Mappable<K, V> {
+    /// Get a value from the Mappable.
+    /// # Parameter
+    /// - key - the key of the node in the Mappable.
+    ///
+    /// # Return
+    /// An option containing an immutable reference to the Value if present in the Mappable, returns None otherwise.
+    fn get(&self, key: &K) -> Option<&V>;
+
+    /// Get a value from the Mappable.
+    /// # Parameter
+    /// - key - the key of the value in the Mappable.
+    ///
+    /// # Return
+    /// An option containing an mutable reference to the value if present in the Mappable, returns None otherwise.
+    fn get_mut(&mut self, key: &K) -> Option<&mut V>;
+
+    /// Add a value to the Mappable
+    /// # Parameters
+    /// - key - The key where the value has to be stored in the Mappable.
+    /// - value - The value to store in the Mappable.
+    fn add(&mut self, key: K, value: V);
 }
 
-impl<V> AdjUnicity<V> for Vec<V> where V: PartialEq {
-    fn push_unique(&mut self, val: V) {
+pub trait Settable<V> {
+    fn add(&mut self, val: V);
+}
+
+impl<V> Settable<V> for Vec<V>
+where
+    V: PartialEq,
+{
+    fn add(&mut self, val: V) {
         if !self.contains(&val) {
             self.push(val);
         }
     }
 }
 
+/// Trait that ensure that a structure can become a vertice for a Cluster.
 pub trait Node<K> {
     /// Get the adjacency of the current Node.
     /// # Return
@@ -100,19 +129,11 @@ pub trait Node<K> {
 
 /// Graph data structure trait.
 /// Named Cluster to help diffenciate from the other implementation of graph data structure.
-pub trait Cluster<K, N: Node<K>>
+pub trait Cluster<K, N: Node<K>>: Mappable<K, N>
 where
     K: PartialEq,
     K: Clone,
 {
-    /// Get a node from the graph
-    /// **Parameter**
-    /// - key - the index of the node in the Graph.
-    /// 
-    /// # Return
-    /// An option containing an immutable reference to the Node if present in the Graph, returns None otherwise.
-    fn get(&self, key: &K) -> Option<&N>;
-
     /// Get the adjancy list of the node designed by it key given in parameter.
     /// # Parameter
     /// - key - the index of the node we want to get the adjacency list.
@@ -134,7 +155,7 @@ where
     /// Check if the Cluster contains a node at a given key.
     /// # Parameter
     /// - key - The key on we want to check the Cluster contains it or no.
-    /// 
+    ///
     /// # Return
     /// True if the key is in the Cluster, false otherwise.
     fn contains_key(&self, key: &K) -> bool;
@@ -142,7 +163,11 @@ where
     /// Add a node in the Cluster.
     /// # Return
     /// The index at which the node has been stored in the graph.
-    fn add(&mut self, node: N) -> K;
+    fn add(&mut self, node: N) -> K {
+        let key = self.new_key();
+        Mappable::add(self, key.clone(), node);
+        key
+    }
 
     /// Removes the designated Node from the graph
     /// # Parameter
@@ -150,14 +175,6 @@ where
     /// # Return
     /// An error if the node doesn't exist nothing otherwise.
     fn remove(&mut self, key: K) -> Result<()>;
-
-    /// Get a node from the graph
-    /// # Parameter
-    /// - key - the index of the node in the Graph.
-    /// 
-    /// # Return
-    /// An option containing an mutable reference to the Node if present in the Graph, returns None otherwise.
-    fn get_mut(&mut self, key: &K) -> Option<&mut N>;
 
     /// Get the adjancy list of the node designed by it key given in parameter.
     /// # Parameter
@@ -176,17 +193,15 @@ where
     /// # Parameters
     /// - src - The key of the source node
     /// - dst - The key of the destination node.
-    /// 
+    ///
     /// # Return
     /// Nothing if everithing gone well, an error otherwise.
-    /// 
+    ///
     fn add_edge(&mut self, src: K, dst: K) -> Result<()> {
         let adj = self.get_adj_mut(&src).ok_or(ClusterError::detailled(
             "To add edge, both node must exists in the Cluster.",
         ))?;
-        if !adj.contains(&dst) {
-            adj.push(dst);
-        }
+        adj.add(dst);
         Ok(())
     }
 
@@ -194,10 +209,10 @@ where
     /// # Parameters
     /// - src - The key of the source node
     /// - dst - The key of the destination node.
-    /// 
+    ///
     /// # Return
     /// Nothing if everithing gone well, an error otherwise.
-    /// 
+    ///
     fn remove_edge(&mut self, src: K, dst: K) -> Result<()> {
         let adj = self
             .get_adj_mut(&src)
@@ -212,10 +227,10 @@ where
     /// # Parameters
     /// - src - The key of the source node
     /// - dst - The key of the destination node.
-    /// 
+    ///
     /// # Return
     /// Nothing if everithing gone well, an error otherwise.
-    /// 
+    ///
     fn add_doubly_edge(&mut self, src: K, dst: K) -> Result<()> {
         self.add_edge(src.clone(), dst.clone())?;
         self.add_edge(dst, src)?;
@@ -226,10 +241,10 @@ where
     /// # Parameters
     /// - src - The key of the source node
     /// - dst - The key of the destination node.
-    /// 
+    ///
     /// # Return
     /// Nothing if everithing gone well, an error otherwise.
-    /// 
+    ///
     fn remove_doubly_edge(&mut self, src: K, dst: K) -> Result<()> {
         self.remove_edge(src.clone(), dst.clone())?;
         self.remove_edge(dst, src)?;
