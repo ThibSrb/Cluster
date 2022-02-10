@@ -21,6 +21,8 @@ impl Display for ClusterError {
 }
 impl Error for ClusterError {}
 impl ClusterError {
+
+    #[allow(dead_code)]
     /// Create a new boxed Cluster error with no details.
     /// # Return
     /// The newly created Boxed ClusterError.
@@ -30,6 +32,7 @@ impl ClusterError {
         })
     }
 
+    #[allow(dead_code)]
     /// Create a new boxed Cluster error with the specified details in it.
     /// # Parameter
     /// - detail - The detail of the error.
@@ -232,7 +235,7 @@ where
     }
 
     /// Remove the edge between src and dst in the Cluster.
-    /// # Parameters
+    /// # Parameters
     /// - src - The key of the source node
     /// - dst - The key of the destination node.
     ///
