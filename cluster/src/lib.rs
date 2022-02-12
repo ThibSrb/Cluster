@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
 
@@ -100,7 +101,7 @@ pub trait Mappable<K, V> {
     /// # Parameters
     /// - key - The key where the value has to be stored in the Mappable.
     /// - value - The value to store in the Mappable.
-    fn add(&mut self, key: K, value: V);
+    fn add(&mut self, key: K, value: V) -> Option<V>;
 
     /// Removes the designated value from the Mappable
     /// # Parameter
@@ -116,6 +117,28 @@ pub trait Mappable<K, V> {
     /// # Return
     /// True if the key is in the Mappable, false otherwise.
     fn contains_key(&self, key: &K) -> bool;
+}
+
+impl<K,V> Mappable<K,V> for HashMap<K,V> where K: core::hash::Hash + Eq {
+    fn get(&self, key: &K) -> Option<&V> {
+        HashMap::get(self, key)
+    }
+
+    fn get_mut(&mut self, key: &K) -> Option<&mut V> {
+        HashMap::get_mut(self, key)
+    }
+
+    fn add(&mut self, key: K, value: V) -> Option<V> {
+        HashMap::insert(self, key, value)
+    }
+
+    fn remove(&mut self, key: &K) -> Option<V> {
+        HashMap::remove(self, key)
+    }
+
+    fn contains_key(&self, key: &K) -> bool {
+        HashMap::contains_key(self, key)
+    }
 }
 
 pub trait Settable<V> {
