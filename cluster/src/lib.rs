@@ -22,7 +22,6 @@ impl Display for ClusterError {
 }
 impl Error for ClusterError {}
 impl ClusterError {
-
     #[allow(dead_code)]
     /// Create a new boxed Cluster error with no details.
     /// # Return
@@ -79,8 +78,7 @@ impl Default for ClusterError {
     }
 }
 
-
-pub trait Mappable<K, V> {
+pub trait Mappable<K, V> : IntoIterator {
     /// Get a value from the Mappable.
     /// # Parameter
     /// - key - the key of the node in the Mappable.
@@ -119,7 +117,11 @@ pub trait Mappable<K, V> {
     fn contains_key(&self, key: &K) -> bool;
 }
 
-impl<K,V> Mappable<K,V> for HashMap<K,V> where K: core::hash::Hash + Eq {
+impl<K, V> Mappable<K, V> for HashMap<K, V>
+where
+    K: core::hash::Hash + Eq + Clone,
+    V: Clone,
+{
     fn get(&self, key: &K) -> Option<&V> {
         HashMap::get(self, key)
     }
@@ -141,7 +143,7 @@ impl<K,V> Mappable<K,V> for HashMap<K,V> where K: core::hash::Hash + Eq {
     }
 }
 
-pub trait Settable<V> {
+pub trait Settable<V> : IntoIterator {
     /// Adds a value in the Settable.
     /// # Parameter
     /// - val - The value to add in the Settable.
@@ -150,7 +152,7 @@ pub trait Settable<V> {
     /// Removes a value in the Settable.
     /// # Parameter
     /// - val - The value to remove in the Settable.
-    fn remove(&mut self, val:& V);
+    fn remove(&mut self, val: &V);
 
     /// Check if the Settable contains a given value.
     /// # Parameter
