@@ -78,9 +78,10 @@ impl Default for ClusterError {
     }
 }
 
-pub trait Mappable<K, V> : IntoIterator {
+
+pub trait Mappable<K, V> {
     /// Get a value from the Mappable.
-    /// # Parameter
+    /// # Parameter
     /// - key - the key of the node in the Mappable.
     ///
     /// # Return
@@ -117,11 +118,7 @@ pub trait Mappable<K, V> : IntoIterator {
     fn contains_key(&self, key: &K) -> bool;
 }
 
-impl<K, V> Mappable<K, V> for HashMap<K, V>
-where
-    K: core::hash::Hash + Eq + Clone,
-    V: Clone,
-{
+impl<K,V> Mappable<K,V> for HashMap<K,V> where K: core::hash::Hash + Eq {
     fn get(&self, key: &K) -> Option<&V> {
         HashMap::get(self, key)
     }
@@ -143,7 +140,7 @@ where
     }
 }
 
-pub trait Settable<V> : IntoIterator {
+pub trait Settable<V> {
     /// Adds a value in the Settable.
     /// # Parameter
     /// - val - The value to add in the Settable.
@@ -152,7 +149,7 @@ pub trait Settable<V> : IntoIterator {
     /// Removes a value in the Settable.
     /// # Parameter
     /// - val - The value to remove in the Settable.
-    fn remove(&mut self, val: &V);
+    fn remove(&mut self, val:& V);
 
     /// Check if the Settable contains a given value.
     /// # Parameter
@@ -244,7 +241,7 @@ where
     }
 
     /// Add an edge between src and dst in the Cluster.
-    /// # Parameters
+    /// # Parameters
     /// - src - The key of the source node
     /// - dst - The key of the destination node.
     ///
@@ -278,7 +275,7 @@ where
     }
 
     /// Add an edge between src and dst in the Cluster in both directions.
-    /// # Parameters
+    /// # Parameters
     /// - src - The key of the source node
     /// - dst - The key of the destination node.
     ///
@@ -292,7 +289,7 @@ where
     }
 
     /// Remove the edges between src and dst in the Cluster in both directions.
-    /// # Parameters
+    /// # Parameters
     /// - src - The key of the source node
     /// - dst - The key of the destination node.
     ///
