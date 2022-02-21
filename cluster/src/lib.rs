@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Display;
 
@@ -78,109 +77,6 @@ impl Default for ClusterError {
     }
 }
 
-
-pub trait Mappable<K, V> {
-    /// Get a value from the Mappable.
-    /// # Parameter
-    /// - key - the key of the node in the Mappable.
-    ///
-    /// # Return
-    /// An option containing an immutable reference to the Value if present in the Mappable, returns None otherwise.
-    fn get(&self, key: &K) -> Option<&V>;
-
-    /// Get a value from the Mappable.
-    /// # Parameter
-    /// - key - the key of the value in the Mappable.
-    ///
-    /// # Return
-    /// An option containing an mutable reference to the value if present in the Mappable, returns None otherwise.
-    fn get_mut(&mut self, key: &K) -> Option<&mut V>;
-
-    /// Add a value to the Mappable
-    /// # Parameters
-    /// - key - The key where the value has to be stored in the Mappable.
-    /// - value - The value to store in the Mappable.
-    fn add(&mut self, key: K, value: V) -> Option<V>;
-
-    /// Removes the designated value from the Mappable
-    /// # Parameter
-    /// - key - The key of the value to remove.
-    /// # Return
-    /// An Option containing the value if it exists, None otherwise
-    fn remove(&mut self, key: &K) -> Option<V>;
-
-    /// Check if the Mappable contains a value at a given key.
-    /// # Parameter
-    /// - key - The key on we want to check the Mappable contains it or no.
-    ///
-    /// # Return
-    /// True if the key is in the Mappable, false otherwise.
-    fn contains_key(&self, key: &K) -> bool;
-}
-
-impl<K,V> Mappable<K,V> for HashMap<K,V> where K: core::hash::Hash + Eq {
-    fn get(&self, key: &K) -> Option<&V> {
-        HashMap::get(self, key)
-    }
-
-    fn get_mut(&mut self, key: &K) -> Option<&mut V> {
-        HashMap::get_mut(self, key)
-    }
-
-    fn add(&mut self, key: K, value: V) -> Option<V> {
-        HashMap::insert(self, key, value)
-    }
-
-    fn remove(&mut self, key: &K) -> Option<V> {
-        HashMap::remove(self, key)
-    }
-
-    fn contains_key(&self, key: &K) -> bool {
-        HashMap::contains_key(self, key)
-    }
-}
-
-pub trait Settable<V> {
-    /// Adds a value in the Settable.
-    /// # Parameter
-    /// - val - The value to add in the Settable.
-    fn add(&mut self, val: V);
-
-    /// Removes a value in the Settable.
-    /// # Parameter
-    /// - val - The value to remove in the Settable.
-    fn remove(&mut self, val:& V);
-
-    /// Check if the Settable contains a given value.
-    /// # Parameter
-    /// - val - The value we want to check the Settable contains it or no.
-    ///
-    /// # Return
-    /// True if the key is in the Settable, false otherwise.
-    fn contains(&mut self, val: &V) -> bool;
-}
-
-impl<V> Settable<V> for Vec<V>
-where
-    V: PartialEq,
-{
-    fn add(&mut self, val: V) {
-        if !self.contains(&val) {
-            self.push(val);
-        }
-    }
-
-    fn remove(&mut self, val: &V) {
-        if let Some(index) = self.iter().position(|i| *i == *val) {
-            self.remove(index);
-        }
-    }
-
-    fn contains(&mut self, val: &V) -> bool {
-        self.as_slice().contains(val)
-    }
-}
-
 /// Trait that ensure that a structure can become a vertice for a Cluster.
 pub trait Node<K> {
     /// Get the adjacency of the current Node.
@@ -193,13 +89,46 @@ pub trait Node<K> {
     fn adj_mut(&mut self) -> &mut Vec<K>;
 }
 
+
 /// Graph data structure trait.
 /// Named Cluster to help diffenciate from the other implementation of graph data structure.
-pub trait Cluster<K, N: Node<K>>: Mappable<K, N>
+pub trait Cluster<K, N: Node<K>>
 where
     K: PartialEq,
     K: Clone,
 {
+    /// Removes the designated value from the Cluster
+    /// # Parameter
+    /// - key - The key of the value to remove.
+    /// # Return
+    /// An Option containing the value if it exists, None otherwise
+    fn remove(&mut self, key: &K) -> Option<N>;
+
+    /// Check if the Cluster contains a value at a given key.
+    /// # Parameter
+    /// - key - The key on we want to check the Cluster contains it or no.
+    ///
+    /// # Return
+    /// True if the key is in the Cluster, false otherwise.
+    ///
+    fn contains_key(&self, key: &K) -> bool;
+
+    /// Get a value from the Cluster.
+    /// # Parameter
+    /// - key - the key of the node in the Cluster.
+    ///
+    /// # Return
+    /// An option containing an immutable reference to the Value if present in the Cluster, returns None otherwise.
+    fn get(&self, key: &K) -> Option<&N>;
+
+    /// Get a value from the Cluster.
+    /// # Parameter
+    /// - key - the key of the value in the Cluster.
+    ///
+    /// # Return
+    /// An option containing an mutable reference to the value if present in the Cluster, returns None otherwise.
+    fn get_mut(&mut self, key: &K) -> Option<&mut N>;
+
     /// Get the adjancy list of the node designed by it key given in parameter.
     /// # Parameter
     /// - key - the index of the node we want to get the adjacency list.
@@ -221,11 +150,7 @@ where
     /// Add a node in the Cluster.
     /// # Return
     /// The index at which the node has been stored in the graph.
-    fn add(&mut self, node: N) -> K {
-        let key = self.new_key();
-        Mappable::add(self, key.clone(), node);
-        key
-    }
+    fn add(&mut self, node: N) -> K;
 
     /// Get the adjancy list of the node designed by it key given in parameter.
     /// # Parameter
@@ -252,7 +177,9 @@ where
         let adj = self.get_adj_mut(&src).ok_or(ClusterError::detailled(
             "To add edge, both node must exists in the Cluster.",
         ))?;
-        adj.add(dst);
+        if !adj.contains(&dst) {
+            adj.push(dst);
+        }
         Ok(())
     }
 
