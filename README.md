@@ -137,7 +137,7 @@ fn adj_mut(&mut self) -> &mut Vec<K>;
 
 ## Help
 
-## Remainder
+## Reminder
 
 ```mermaid
 graph LR
